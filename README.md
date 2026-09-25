@@ -6,8 +6,8 @@ a labelled dataset of 6,000 career questions from CareerVillage.org and 16,130 v
 **Live site:** https://renaissancephilanthropy.github.io/careernet-app/
 
 - **Explore the data** (`docs/index.html`): a dashboard that links the questions' occupation
-  (SOC) codes to U.S. Bureau of Labor Statistics employment and wage figures, filterable by
-  state and domain.
+  (SOC) codes to U.S. Bureau of Labor Statistics employment and wage figures and to the other
+  CareerNet annotations (answer quality, scenarios, and goals), filterable by state and domain.
 - **Search** (`docs/search/`): search the questions and answers by meaning rather than by
   keyword, and filter by occupation, scenario and goal. The companion
   [RAG notebook](https://github.com/RenaissancePhilanthropy/careernet-data/blob/main/Notebooks/careernet_retrieval_rag.ipynb)
