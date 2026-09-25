@@ -1,0 +1,60 @@
+CareerNet - semantic search over the CareerNet v1.1 questions and answers
+========================================================================
+
+HOW TO RUN
+----------
+Windows   double-click  start.bat
+Mac       double-click  start.command
+          (if macOS blocks it: right-click > Open, then Open again)
+
+Your browser opens at http://127.0.0.1:8123/search/. Leave the black window open
+while you use the app.
+
+TO STOP
+-------
+Close the window, or press Ctrl+C. Either works - the server checks whether its
+window is still there and shuts itself down within a few seconds if not, so it
+will not be left running in the background.
+
+The page is served to your machine only. Nobody else on your network can reach it.
+
+FIRST RUN
+---------
+The page downloads the search model, about 300MB, from huggingface.co. A progress
+bar shows how far along it is. Your browser keeps it afterwards, so this happens
+once. If you click an example question during the download, it runs by itself as
+soon as the model is ready - you do not need to click again.
+
+Opening index.html directly will NOT work. Browsers block the files the page needs
+unless they are served over http, which is all the start script does.
+
+Nothing you type is ever sent anywhere. Searching runs entirely in your browser.
+
+THE MODEL ON YOUR DISK
+----------------------
+The model is kept by your browser, not by this folder, in the storage it uses for
+http://127.0.0.1:8123. About 300MB, stored once, reused every time you run this.
+It is not downloaded again on later runs and nothing accumulates.
+
+Two things to know:
+
+  * It stays there after you delete this folder. To remove it, clear site data for
+    127.0.0.1 in your browser settings, or use the "Clear browsing data" dialog and
+    include cached files.
+
+  * Browsers treat a different port as a different site. If port 8123 is already in
+    use by something else, the start script says so and moves to 8124, and the model
+    downloads again for that address. Closing whatever holds 8123 and starting again
+    avoids the second copy. Launching the app twice does not do this - the second
+    launch just opens the window that is already running.
+
+WHAT'S HERE
+-----------
+static/search/   the search app
+static/          the SOC-LMI dashboard, reachable from the top navigation
+
+QUESTIONS
+---------
+The data, its labels and how it was collected are described at
+https://github.com/RenaissancePhilanthropy/careernet-data
+Questions about the data: ulrich@renphil.org

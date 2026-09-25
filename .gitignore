@@ -1,0 +1,6 @@
+# Python
+__pycache__/
+
+# OS clutter
+.DS_Store
+Thumbs.db

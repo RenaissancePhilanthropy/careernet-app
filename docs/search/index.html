@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CareerNet — Search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --teal:#1EA69A; --blue:#0099E8; --dark-blue:#01579B;
+    --bg:#F8FAFC; --band:#EBF8F7; --text:#1E293B; --muted:#64748B;
+    --border:#E2E8F0; --card:#FFFFFF;
+    --ui: 'Inter', system-ui, sans-serif;
+    --voice: 'Source Serif 4', Georgia, serif;
+    --pad: 32px;
+  }
+
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--ui); background: var(--bg); color: var(--text); line-height: 1.5; }
+  :focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-radius: 4px; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
+  }
+
+  /* ── Shared nav ─────────────────────────────────────────────────────────── */
+  .nav { background: var(--card); border-bottom: 1px solid var(--border); }
+  .nav-in { padding: 0 24px;
+            display: flex; align-items: center; gap: 28px; height: 54px; }
+  .nav-brand { font-size: .92rem; font-weight: 700; color: var(--dark-blue); letter-spacing: -.01em; }
+  .nav a { font-size: .86rem; color: var(--muted); text-decoration: none; padding: 4px 0;
+           border-bottom: 2px solid transparent; }
+  .nav a:hover { color: var(--text); }
+  .nav a[aria-current="page"] { color: var(--dark-blue); font-weight: 600; border-bottom-color: var(--teal); }
+
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 0 var(--pad); }
+
+  /* ── Ask ────────────────────────────────────────────────────────────────── */
+  .ask { background: var(--band); border-bottom: 1px solid var(--border); padding: 40px 0 34px; }
+  .ask h1 { font-size: 1.7rem; font-weight: 700; color: var(--dark-blue);
+            letter-spacing: -.02em; margin-bottom: 6px; }
+  .ask .lede { font-size: .92rem; color: var(--muted); max-width: 62ch; margin-bottom: 22px; }
+
+  .askbar { display: flex; gap: 10px; max-width: 860px; }
+  .askbar input { flex: 1; min-width: 0; padding: 14px 18px; font-family: var(--ui);
+                  font-size: 1rem; color: var(--text); background: var(--card);
+                  border: 1px solid var(--border); border-radius: 10px; }
+  .askbar input:focus { outline: none; border-color: var(--teal);
+                        box-shadow: 0 0 0 3px rgba(30,166,154,.16); }
+  .askbar button { padding: 14px 28px; border: none; border-radius: 10px; background: var(--teal);
+                   color: #fff; font-family: var(--ui); font-size: .92rem; font-weight: 600;
+                   cursor: pointer; transition: background .15s; }
+  .askbar button:hover:not(:disabled) { background: #178C82; }
+  .askbar button:disabled { background: #A9BDC4; cursor: default; }
+
+  .scope { display: inline-flex; margin-top: 16px; border: 1px solid var(--border);
+           border-radius: 8px; overflow: hidden; background: var(--card); }
+  .scope button { padding: 7px 18px; border: none; background: transparent; font-family: var(--ui);
+                  font-size: .84rem; color: var(--muted); cursor: pointer; }
+  .scope button[aria-pressed="true"] { background: var(--teal); color: #fff; font-weight: 600; }
+
+  .note { font-size: .8rem; color: var(--muted); margin-top: 14px; min-height: 1.3em; }
+  .note.err { color: #B91C1C; }
+  .bar { height: 4px; width: 100%; max-width: 860px; background: #D6EDEA; border-radius: 3px;
+         overflow: hidden; margin-top: 2px; display: none; }
+  .bar.on { display: block; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--teal);
+           transition: width .18s linear; }
+  .bar.wait i { width: 35%; animation: slide 1.1s ease-in-out infinite; }
+  @keyframes slide { 0% { margin-left: -35%; } 100% { margin-left: 100%; } }
+  @media (prefers-reduced-motion: reduce) { .bar.wait i { animation: none; width: 100%; opacity:.5; } }
+  .tries { font-size: .82rem; color: var(--muted); margin-top: 12px; }
+  .tries button { font-family: var(--ui); font-size: .82rem; color: var(--dark-blue);
+                  background: none; border: none; border-bottom: 1px dotted #94A3B8;
+                  cursor: pointer; margin: 0 14px 6px 0; padding: 0; }
+  .tries button:hover { color: var(--teal); border-bottom-color: var(--teal); }
+
+  /* ── Summary band ───────────────────────────────────────────────────────── */
+  .summary { border-bottom: 1px solid var(--border); background: var(--card); padding: 18px 0 16px; }
+  .summary-in { display: grid; gap: 26px 30px; align-items: start;
+                 grid-template-columns: 130px minmax(0,1.5fr) minmax(0,1fr) 200px; }
+  .sum-block { min-width: 0; }
+  @media (max-width: 1180px) { .summary-in { grid-template-columns: 110px minmax(0,1fr) minmax(0,1fr); } }
+  @media (max-width: 720px)  { .summary-in { grid-template-columns: 1fr; } }
+  .sum-h { font-size: .68rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+           color: var(--muted); margin-bottom: 8px; }
+  .facets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .facet { font-family: var(--ui); font-size: .76rem; padding: 4px 10px; border-radius: 20px;
+           border: 1px solid transparent; cursor: pointer; background: rgba(30,166,154,.11);
+           color: #0F766E; }
+  .facet:hover { border-color: var(--teal); }
+  .facet[aria-pressed="true"] { background: var(--teal); color: #fff; }
+  .facet .n { opacity: .7; margin-left: 5px; }
+  .facet.g { background: rgba(0,153,232,.11); color: #0369A1; }
+  .facet.g[aria-pressed="true"] { background: var(--blue); color: #fff; }
+  .facet.d { background: #fff; border-color: var(--border); color: var(--text); }
+  .facet.d:hover { border-color: var(--teal); }
+  .facet.d[aria-pressed="true"] { background: var(--dark-blue); color: #fff; border-color: var(--dark-blue); }
+  .sub { flex-basis: 100%; margin-top: 8px; padding-top: 9px; border-top: 1px dashed var(--border);
+         display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .sub-k { flex-basis: 100%; font-size: .7rem; color: var(--muted); margin-bottom: 2px; }
+  @keyframes cue { from { background: #E6F7F5; } to { background: transparent; } }
+  .browse.flash { animation: cue .7s ease-out; border-radius: 10px; }
+  @media (prefers-reduced-motion: reduce) { .browse.flash { animation: none; } }
+  .count { font-size: 1.5rem; font-weight: 700; color: var(--dark-blue); line-height: 1.1; }
+  .count small { display: block; font-size: .74rem; font-weight: 400; color: var(--muted); margin-top: 3px; }
+  .years { display: flex; align-items: flex-end; gap: 2px; height: 40px; }
+  .yr { width: 11px; background: var(--blue); opacity: .35; border-radius: 2px 2px 0 0; min-height: 2px; }
+  .yr.on { opacity: 1; }
+  .yr-axis { display: flex; justify-content: space-between; font-size: .66rem; color: var(--muted);
+             margin-top: 4px; }
+  .nearby { font-size: .8rem; color: var(--muted); max-width: 46ch; }
+  .nearby b { color: var(--text); font-weight: 600; }
+
+  /* ── Browse ─────────────────────────────────────────────────────────────── */
+  .browse { display: grid; grid-template-columns: minmax(300px, 400px) 1fr; gap: 26px;
+            padding: 24px 0 8px; align-items: start; }
+  .list { max-height: 78vh; overflow-y: auto; padding-right: 4px; }
+  .row { width: 100%; text-align: left; font-family: var(--ui); background: var(--card);
+         border: 1px solid var(--border); border-left: 3px solid transparent;
+         border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; display: block; }
+  .row:hover { border-color: #C7D2DA; border-left-color: var(--teal); }
+  .row[aria-current="true"] { border-left-color: var(--teal); background: #F2FBFA;
+                              border-color: var(--teal); }
+  .row-t { font-family: var(--voice); font-size: .95rem; color: var(--text); line-height: 1.45;
+           display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .row-m { font-size: .72rem; color: var(--muted); margin-top: 7px;
+           display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .row-occ { color: #0F766E; font-weight: 600; }
+  .row.wider { border-left-style: dashed; background: #FCFDFE; }
+  .row.wider .row-t { color: #475569; }
+  .edge { display: flex; align-items: center; gap: 9px; font-size: .69rem; color: var(--muted);
+          text-transform: uppercase; letter-spacing: .07em; margin: 14px 0 9px; }
+  .edge::after { content: ''; flex: 1; border-top: 1px dashed var(--border); }
+  .dot { color: var(--border); }
+
+  .detail { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 30px 34px 34px; }
+  .d-kicker { font-size: .7rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+              color: var(--muted); margin-bottom: 14px; }
+  .d-voice { font-family: var(--voice); font-size: 1.22rem; line-height: 1.62; color: #0F172A;
+             white-space: pre-wrap; }
+  .d-voice.ans { font-size: 1.06rem; }
+  .d-title { font-family: var(--voice); font-size: 1.42rem; font-weight: 600; line-height: 1.34;
+             color: #0F172A; margin-bottom: 12px; }
+  .d-title + .d-voice { font-size: 1.04rem; color: #334155; }
+  .d-meta { display: flex; flex-wrap: wrap; gap: 10px 22px; margin: 22px 0 0;
+            padding-top: 18px; border-top: 1px solid var(--border); }
+  .m-item { min-width: 0; }
+  .m-k { font-size: .67rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+         color: var(--muted); margin-bottom: 3px; }
+  .m-v { font-size: .84rem; color: var(--text); }
+  .m-v .tag { display: inline-block; margin: 2px 5px 2px 0; padding: 2px 9px; border-radius: 20px;
+              font-size: .76rem; background: rgba(30,166,154,.11); color: #0F766E; }
+  .m-v .tag.g { background: rgba(0,153,232,.11); color: #0369A1; cursor: help; }
+  .m-v .tag.r { background: rgba(1,87,155,.10); color: var(--dark-blue); }
+  .m-v .tag.f { background: #F1F5F9; color: var(--muted); }
+
+  .acts { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+  .act { font-family: var(--ui); font-size: .82rem; padding: 8px 15px; border-radius: 8px;
+         border: 1px solid var(--border); background: var(--card); color: var(--dark-blue);
+         cursor: pointer; }
+  .act:hover { border-color: var(--teal); color: var(--teal); }
+
+  /* answers within a question */
+  .replies { margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--border); }
+  .replies h3 { font-size: .8rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+                color: var(--muted); margin-bottom: 14px; }
+  .reply { border-left: 3px solid #B8DEDA; padding: 2px 0 2px 18px; margin-bottom: 30px; }
+  .reply:last-child { margin-bottom: 4px; }
+  .reply-t { font-family: var(--voice); font-size: .98rem; line-height: 1.6; color: #334155;
+             white-space: pre-wrap; }
+  .reply-t.clip { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical;
+                  overflow: hidden;
+                  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 1.5em), transparent);
+                          mask-image: linear-gradient(to bottom, #000 calc(100% - 1.5em), transparent); }
+  .reply-f { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 10px; }
+  .link { font-family: var(--ui); font-size: .78rem; color: var(--dark-blue); background: none;
+          border: none; padding: 0; cursor: pointer; text-decoration: underline;
+          text-underline-offset: 2px; }
+  .link:hover { color: var(--teal); }
+  .xp { height: 30px; flex: none; padding: 0 13px 0 10px; border-radius: 999px;
+        border: 1px solid var(--border); background: var(--card); color: var(--dark-blue);
+        font-family: var(--ui); font-size: .78rem; font-weight: 500; line-height: 1;
+        display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+        transition: border-color .15s, color .15s, background .15s; }
+  .xp[hidden] { display: none; }
+  .xp:hover { border-color: var(--teal); color: var(--teal); background: var(--band); }
+  .xp svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.2;
+            stroke-linecap: round; stroke-linejoin: round; transition: transform .2s ease; }
+  .xp[aria-expanded="true"] svg { transform: rotate(180deg); }
+
+  /* quality meters */
+  .meters { display: flex; gap: 14px; flex-wrap: wrap; }
+  .meter { display: flex; align-items: center; gap: 6px; cursor: help; }
+  .meter-k { font-size: .72rem; color: var(--muted); }
+  .pips { display: flex; gap: 2px; }
+  .pip { width: 7px; height: 7px; border-radius: 50%; background: var(--border); }
+  .pip.on { background: var(--teal); }
+  .pip.on.low { background: #E8A33D; }
+
+  /* ── Market ─────────────────────────────────────────────────────────────── */
+  .market { padding: 30px 0 10px; }
+  .market h2 { font-size: 1.02rem; font-weight: 600; margin-bottom: 5px; }
+  .market p { font-size: .84rem; color: var(--muted); max-width: 74ch; margin-bottom: 14px; }
+  .plot { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+          padding: 22px 26px; }
+  .blank { font-size: .86rem; color: var(--muted); line-height: 1.6; max-width: 70ch; }
+  .blank b { color: var(--text); }
+  .bars { display: grid; grid-template-columns: minmax(140px, 250px) 1fr auto; gap: 9px 14px;
+          align-items: center; }
+  .bar-l { font-size: .82rem; text-align: right; color: var(--text); overflow-wrap: anywhere; }
+  .bar-t { height: 20px; background: var(--band); border-radius: 4px; position: relative; }
+  .bar-f { height: 100%; border-radius: 4px; background: var(--teal); }
+  .bar-v { font-size: .78rem; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .bar-n { font-size: .72rem; color: var(--muted); }
+  .bars-key { font-size: .76rem; color: var(--muted); margin-top: 16px; padding-top: 12px;
+              border-top: 1px solid var(--border); }
+
+  .foot { border-top: 1px solid var(--border); margin-top: 34px; padding: 20px 0 40px;
+          font-size: .78rem; color: #94A3B8; line-height: 1.75; }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 1040px) {
+    .browse { grid-template-columns: 1fr; }
+    .list { max-height: 320px; }
+    :root { --pad: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-in">
+    <span class="nav-brand">CareerNet</span>
+    <a href="../">Explore the data</a>
+    <a href="./" aria-current="page">Search</a>
+  </div>
+</nav>
+
+<header class="ask">
+  <div class="wrap">
+    <h1>Search what young people actually asked</h1>
+    <p class="lede">Explore 6,000 CareerVillage questions and 16,130 volunteer answers, hand-labelled by
+      occupation, intent, and reasoning. Search across them by meaning, not just keywords.</p>
+
+    <div class="askbar">
+      <input id="q" placeholder="Describe what you're looking for, in your own words" autocomplete="off"
+             aria-label="Search">
+      <button id="go" disabled>Search</button>
+    </div>
+
+    <div class="scope" role="group" aria-label="What to search">
+      <button id="sc-q" aria-pressed="true">Questions</button>
+      <button id="sc-a" aria-pressed="false">Answers</button>
+    </div>
+
+    <p class="note" id="note">Starting up…</p>
+    <div class="bar on wait" id="bar"><i></i></div>
+    <div class="tries" id="tries"></div>
+  </div>
+</header>
+
+<section class="summary hidden" id="summary" aria-live="polite">
+  <div class="wrap summary-in">
+    <div class="sum-block">
+      <div class="sum-h">Found</div>
+      <div class="count" id="s-count">—<small id="s-scope"></small></div>
+      <button class="link hidden" id="s-clear" style="margin-top:8px">Clear narrowing</button>
+    </div>
+    <div class="sum-block">
+      <div class="sum-h">Occupations — click to narrow</div>
+      <div class="facets" id="s-occ"></div>
+    </div>
+    <div class="sum-block">
+      <div class="sum-h">Goals — click to narrow</div>
+      <div class="facets" id="s-goal"></div>
+    </div>
+    <div class="sum-block">
+      <div class="sum-h">When they were asked</div>
+      <div class="years" id="s-years"></div>
+      <div class="yr-axis"><span id="s-y0"></span><span id="s-y1"></span></div>
+    </div>
+  </div>
+</section>
+
+<main>
+  <div class="wrap">
+    <div class="browse hidden" id="browse">
+      <div class="list" id="list" aria-label="Results"></div>
+      <article class="detail" id="detail"></article>
+    </div>
+
+    <section class="market hidden" id="market">
+      <h2>These occupations in the labour market</h2>
+      <p>Wages and employment from the Bureau of Labor Statistics for the occupations your results
+        concern, ordered by how often each appeared. Bar length is the mean annual wage; colour is
+        how many people do the job nationally.</p>
+      <div class="plot" id="plot-lmi"></div>
+    </section>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    Search runs entirely in your browser — nothing you type is sent anywhere.
+    Meaning matching by google/embeddinggemma-300m via transformers.js.
+    Wages and employment from BLS Labor Market Information.
+    <span id="foot-n"></span>
+  </div>
+</footer>
+
+<script type="module">
+import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.6';
+env.allowLocalModels = false;
+
+const TEAL = '#1EA69A', BLUE = '#0099E8';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clip = (s, n) => s.length > n ? s.slice(0, n - 1) + '…' : s;
+const oneline = s => s.replace(/\s+/g, ' ').trim();
+
+let MAN = null, EX = null, HEAD = null;
+const STORE = { questions: {}, answers: {} };
+const S = {
+  mode: 'questions', k: 40,
+  ranked: [],        // every record scored against the current query, best first
+  base: [],          // the top k before any narrowing - what the facet counts describe
+  hits: [],          // what is on screen
+  occ: null, occD: null, goal: null,
+  nPrimary: 0,       // how many of hits came from the original top k, rest are topped up
+  query: '', sel: 0, pending: null,
+};
+
+/* Picked by scoring candidates on the answers behind their top 5 results: every one of
+   those results carries a specific occupation, mean completeness is 3.1-3.5 of 4, and the
+   median answer runs 157-244 words. Queries that retrieve thin or unlabelled advice were
+   dropped even where the match itself looked good. */
+const TRIES = [
+  "What does a physical therapist actually do all day?",
+  "What's the difference between a data scientist and a data analyst?",
+  "How do I become a pharmacist?",
+  "What is it like being a software engineer day to day?",
+  "Can I switch careers into tech in my thirties?",
+];
+
+/* ── boot ─────────────────────────────────────────────────────────────────── */
+async function boot() {
+  MAN = await (await fetch('data/manifest.json')).json();
+  $('tries').innerHTML = 'Try: ' + TRIES.map((t, i) =>
+    `<button data-i="${i}">${esc(t)}</button>`).join('');
+  $('tries').querySelectorAll('button').forEach(bt => bt.onclick = () => {
+    $('q').value = TRIES[+bt.dataset.i]; search();
+  });
+  $('foot-n').textContent =
+    `Covering ${MAN.corpora.questions.n.toLocaleString()} questions and ` +
+    `${MAN.corpora.answers.n.toLocaleString()} answers, asked between ` +
+    `${MAN.corpora.questions.year_min} and ${MAN.corpora.questions.year_max}.`;
+
+  note('Loading the questions and their labels…');
+  HEAD = new Float32Array(await (await fetch('data/dense_head.bin')).arrayBuffer());
+  await Promise.all([loadMeta('questions'), loadVecs('questions')]);
+  note('Downloading the language model. About 300MB the first time; your browser keeps it after that.');
+  const seen = new Map();
+  EX = await pipeline('feature-extraction', MAN.model.repo, {
+    dtype: MAN.model.dtype,
+    progress_callback: p => {
+      if (p.status !== 'progress' || !p.total) return;
+      seen.set(p.file, p);
+      let loaded = 0, total = 0;
+      for (const f of seen.values()) { loaded += f.loaded; total += f.total; }
+      progress(100 * loaded / total);
+      note(`Downloading the language model — ${(loaded / 1e6).toFixed(0)} of ` +
+           `${(total / 1e6).toFixed(0)}MB. Your browser keeps it after this visit.`);
+    },
+  });
+  progress(-1);
+  $('go').disabled = false;
+  if (S.pending) {
+    const q = S.pending; S.pending = null;
+    note('Ready — running the question you picked.');
+    await search(q);
+  } else {
+    note('Ready. Type a question above, or pick one of the examples.');
+  }
+
+  // Answer text is needed to show a question's replies, so fetch it in the background now.
+  // The answer vectors are far larger and only needed for searching answers, so they wait.
+  loadMeta('answers').then(() => { if (S.hits.length) renderDetail(STORE[S.mode]); });
+}
+
+function note(msg, isErr) {
+  const el = $('note');
+  el.textContent = msg;
+  el.classList.toggle('err', !!isErr);
+}
+
+/* pct null = indeterminate, -1 = hide, 0..100 = determinate */
+function progress(pct) {
+  const bar = $('bar');
+  if (pct === -1) { bar.className = 'bar'; return; }
+  if (pct == null) { bar.className = 'bar on wait'; bar.firstElementChild.style.width = ''; return; }
+  bar.className = 'bar on';
+  bar.firstElementChild.style.width = Math.max(2, Math.min(100, pct)) + '%';
+}
+
+function loadMeta(name) {
+  const st = STORE[name];
+  if (!st.metaP) st.metaP = fetch(`data/${name}.meta.json`).then(r => r.json())
+    .then(m => { st.meta = m; Object.assign(st, MAN.corpora[name]); return m; });
+  return st.metaP;
+}
+
+function loadVecs(name) {
+  const st = STORE[name], spec = MAN.corpora[name];
+  if (!st.vecP) st.vecP = fetch(`data/${name}.vec.bin`).then(r => r.arrayBuffer()).then(buf => {
+    const raw = new Int8Array(buf), v = new Float32Array(raw.length);
+    for (let i = 0; i < raw.length; i++) v[i] = raw[i] * spec.scale;
+    st.vec = v; Object.assign(st, spec);
+    return v;
+  });
+  return st.vecP;
+}
+
+async function ready(name) {
+  await Promise.all([loadMeta(name), loadVecs(name)]);
+  return STORE[name];
+}
+
+/* Query text into the same space as the stored vectors.
+   transformers.js returns mean-pooled hidden states, but the real model applies two further
+   linear layers before normalising. Both are bias-free, so they compose into the single
+   768x768 matrix in dense_head.bin. Skipping it puts the query in a different space —
+   results still look plausible, which is what makes the mistake dangerous. */
+async function embed(text) {
+  const out = await EX(MAN.model.query_prompt + text, { pooling: 'mean', normalize: true });
+  return project(out.data);
+}
+
+function project(v) {
+  const D = MAN.model.dim, p = new Float32Array(D);
+  for (let i = 0; i < D; i++) {
+    let s = 0; const off = i * D;
+    for (let j = 0; j < D; j++) s += v[j] * HEAD[off + j];
+    p[i] = s;
+  }
+  let n = 0; for (let i = 0; i < D; i++) n += p[i] * p[i];
+  n = Math.sqrt(n) || 1;
+  for (let i = 0; i < D; i++) p[i] /= n;
+  return p;
+}
+
+/* ── search ───────────────────────────────────────────────────────────────── */
+function rankAll(C, qv) {
+  const D = C.dim, out = new Array(C.n);
+  for (let i = 0; i < C.n; i++) {
+    let sc = 0; const off = i * D;
+    for (let j = 0; j < D; j++) sc += qv[j] * C.vec[off + j];
+    out[i] = [sc, i];
+  }
+  out.sort((x, y) => y[0] - x[0]);
+  return out;
+}
+
+/* Filters, with `skip` naming a group to ignore. Counting a group's own chips while that
+   group is applied would show every unselected option at zero, so each group is counted
+   with the other groups' choices in force but not its own. */
+function passes(m, skip) {
+  if (skip !== 'occ' && S.occ && !m.maj.includes(S.occ)) return false;
+  if (skip !== 'occ' && S.occD && !m.soc.includes(S.occD)) return false;
+  if (skip !== 'goal' && S.goal && !m.g.includes(S.goal)) return false;
+  return true;
+}
+const matches = m => passes(m, null);
+
+function takeTop(C, list, pred, k) {
+  const out = [];
+  if (k <= 0) return out;
+  for (const h of list) {
+    if (pred && !pred(C.meta[h[1]])) continue;
+    out.push(h);
+    if (out.length >= k) break;
+  }
+  return out;
+}
+
+async function search(text) {
+  text = (text ?? $('q').value).trim();
+  if (!text) return;
+  $('q').value = text;
+  if (!EX) {
+    // still loading: hold the question rather than dropping the click on the floor
+    S.pending = text;
+    note('Got it — this will run as soon as the model finishes downloading.');
+    return;
+  }
+  $('go').disabled = true;
+  progress(null);
+  note('Searching…');
+  try {
+    const C = await ready(S.mode);
+    S.ranked = rankAll(C, await embed(text));
+    S.query = text;
+    resetFilters();
+    applyFilters();
+    note(`The ${S.hits.length} closest of ${C.n.toLocaleString()} ${S.mode}.`);
+  } catch (err) {
+    note('Search failed: ' + err.message, true);
+    console.error(err);
+  } finally {
+    progress(-1);
+    $('go').disabled = false;
+  }
+}
+
+/* "Find more like this" re-ranks from the item's own stored vector, so it needs no model
+   call. The query box is rewritten to say what is being matched: otherwise it still reads as
+   the old search and the new results look unexplained. */
+async function similarTo(idx) {
+  const C = await ready(S.mode);
+  const D = C.dim, row = new Float32Array(D);
+  for (let j = 0; j < D; j++) row[j] = C.vec[idx * D + j];
+  const label = oneline(C.meta[idx].ti || C.meta[idx].t);
+  S.ranked = rankAll(C, row);
+  S.query = label;
+  $('q').value = clip(label, 110);
+  resetFilters();
+  applyFilters();
+  note('Showing what most resembles that ' + (S.mode === 'questions' ? 'question' : 'answer') + '.');
+  flash();
+}
+
+function resetFilters() { S.occ = S.occD = S.goal = null; }
+
+/* Narrowing keeps the list full. Results from the original search that match the filter come
+   first and are counted honestly; the list is then topped up from the rest of the corpus,
+   and those extras are marked so the reader can see where the boundary is. Without the
+   top-up, picking a label with one result was a dead end. */
+function applyFilters() {
+  const C = STORE[S.mode];
+  S.base = S.ranked.slice(0, S.k);
+  const primary = S.base.filter(h => matches(C.meta[h[1]]));
+  S.nPrimary = primary.length;
+  if (primary.length < S.k) {
+    const have = new Set(primary.map(h => h[1]));
+    const rest = S.ranked.filter(h => !have.has(h[1]));
+    S.hits = primary.concat(takeTop(C, rest, matches, S.k - primary.length));
+  } else {
+    S.hits = primary;
+  }
+  S.sel = 0;
+  $('summary').classList.remove('hidden');
+  $('browse').classList.remove('hidden');
+  $('market').classList.remove('hidden');
+  renderSummary(C);
+  renderList(C);
+  renderDetail(C);
+  renderMarket(C);
+  $('list').scrollTop = 0;
+}
+
+function flash() {
+  const el = $('browse');
+  el.classList.remove('flash');
+  void el.offsetWidth;
+  el.classList.add('flash');
+  $('summary').scrollIntoView({ block: 'start' });
+}
+
+/* ── summary band ─────────────────────────────────────────────────────────── */
+function tally(hits, C, pick) {
+  const c = new Map();
+  for (const [, i] of hits) for (const v of (pick(C.meta[i]) || [])) c.set(v, (c.get(v) || 0) + 1);
+  return [...c.entries()].sort((x, y) => y[1] - x[1]);
+}
+
+function chip(cls, key, attr, label, n, on, title) {
+  return `<button class="facet ${cls}" ${attr}="${esc(key)}" aria-pressed="${on}"` +
+    (title ? ` title="${esc(title)}"` : '') +
+    `>${esc(label)}${n != null ? `<span class="n">${n}</span>` : ''}</button>`;
+}
+
+function renderSummary(C) {
+  const filtering = S.occ || S.occD || S.goal;
+  $('s-count').firstChild.nodeValue = String(S.hits.length);
+  $('s-scope').textContent = filtering
+    ? `${S.nPrimary} from your search${S.hits.length > S.nPrimary ? `, ${S.hits.length - S.nPrimary} reaching wider` : ''}`
+    : `closest ${S.mode}`;
+  $('s-clear').classList.toggle('hidden', !filtering);
+
+  // counted with the goal choice in force but not the occupation one, so each chip shows
+  // what you would get by picking it instead of the current occupation
+  const forOcc = S.base.filter(h => passes(C.meta[h[1]], 'occ'));
+  const fams = tally(forOcc, C, m => m.maj).slice(0, 6);
+  let occHtml = fams.map(([code, n]) =>
+    chip('', code, 'data-occ', clip(MAN.soc_major[code] || code, 30), n, S.occ === code,
+      'A broad occupation family. Click to see the specific jobs inside it.')).join('');
+
+  // the specific jobs inside the chosen family — this is where the occupation hierarchy
+  // becomes visible instead of only being implied by the labels on each card
+  if (S.occ) {
+    const inFam = forOcc.filter(h => C.meta[h[1]].maj.includes(S.occ));
+    const jobs = tally(inFam, C, m => m.soc.filter(c => c.slice(0, 2) === S.occ)).slice(0, 8);
+    if (jobs.length) {
+      occHtml += `<div class="sub"><span class="sub-k">Jobs inside ` +
+        `${esc(MAN.soc_major[S.occ] || S.occ)}</span>` +
+        jobs.map(([code, n]) =>
+          chip('d', code, 'data-occd', clip(MAN.soc_detail[code] || code, 32), n,
+            S.occD === code, 'A specific job within that family.')).join('') + `</div>`;
+    }
+  }
+  $('s-occ').innerHTML = occHtml ||
+    '<span class="nearby">No occupation labels on these results.</span>';
+  $('s-occ').querySelectorAll('[data-occ]').forEach(bt => bt.onclick = () => {
+    S.occ = S.occ === bt.dataset.occ ? null : bt.dataset.occ;
+    S.occD = null; applyFilters(); flash();
+  });
+  $('s-occ').querySelectorAll('[data-occd]').forEach(bt => bt.onclick = () => {
+    S.occD = S.occD === bt.dataset.occd ? null : bt.dataset.occd;
+    applyFilters(); flash();
+  });
+
+  const forGoal = S.base.filter(h => passes(C.meta[h[1]], 'goal'));
+  const goals = tally(forGoal, C, m => m.g).slice(0, 6);
+  $('s-goal').innerHTML = goals.map(([g, n]) =>
+    chip('g', g, 'data-goal', MAN.goal_labels[g] || g, n, S.goal === g, MAN.goal_help[g])).join('')
+    || '<span class="nearby">No goal labels on these results.</span>';
+  $('s-goal').querySelectorAll('[data-goal]').forEach(bt => bt.onclick = () => {
+    S.goal = S.goal === bt.dataset.goal ? null : bt.dataset.goal;
+    applyFilters(); flash();
+  });
+
+  const y0 = MAN.corpora[S.mode].year_min, y1 = MAN.corpora[S.mode].year_max;
+  const counts = new Map();
+  for (const [, i] of S.hits) { const y = C.meta[i].y; if (y) counts.set(y, (counts.get(y) || 0) + 1); }
+  const max = Math.max(1, ...counts.values());
+  let bars = '';
+  for (let y = y0; y <= y1; y++) {
+    const n = counts.get(y) || 0;
+    bars += `<div class="yr${n ? ' on' : ''}" style="height:${Math.max(2, 40 * n / max)}px" ` +
+            `title="${y}: ${n} result${n === 1 ? '' : 's'}"></div>`;
+  }
+  $('s-years').innerHTML = bars;
+  $('s-y0').textContent = y0; $('s-y1').textContent = y1;
+}
+
+/* ── list ─────────────────────────────────────────────────────────────────── */
+function renderList(C) {
+  const filtering = S.occ || S.occD || S.goal;
+  $('list').innerHTML = S.hits.map(([s, i], r) => {
+    const edge = filtering && r === S.nPrimary
+      ? `<div class="edge">${S.nPrimary ? `${S.nPrimary} from your search · below, reaching wider` : 'None of your results matched · these come from the wider corpus'}</div>`
+      : '';
+    const m = C.meta[i];
+    const occ = m.soc.map(c => MAN.soc_detail[c]).filter(Boolean)[0]
+      || (m.fl[0] ? 'No career named' : '');
+    return edge + `<button class="row${filtering && r >= S.nPrimary ? ' wider' : ''}" data-r="${r}" aria-current="${r === S.sel}">
+      <div class="row-t">${esc(oneline(m.ti || m.t))}</div>
+      <div class="row-m">
+        ${occ ? `<span class="row-occ">${esc(clip(occ, 34))}</span><span class="dot">·</span>` : ''}
+        <span>${esc(m.w || '')}</span>
+        ${S.mode === 'questions' && m.ai ? `<span class="dot">·</span><span>${m.ai.length} answer${m.ai.length === 1 ? '' : 's'}</span>` : ''}
+      </div></button>`;
+  }).join('');
+  $('list').querySelectorAll('[data-r]').forEach(b => b.onclick = () => {
+    S.sel = +b.dataset.r; renderList(C); renderDetail(C);
+  });
+}
+
+/* ── detail ───────────────────────────────────────────────────────────────── */
+function tags(list, cls, help) {
+  return list.map(v => `<span class="tag ${cls}"${help && help[v] ? ` title="${esc(help[v])}"` : ''}>` +
+    `${esc(v)}</span>`).join('');
+}
+
+function meters(ql) {
+  const keys = ['correctness', 'completeness', 'coherency'];
+  return `<div class="meters">` + keys.map((k, n) => {
+    const v = ql[n];
+    if (v == null) return '';
+    let pips = '';
+    for (let p = 1; p <= 4; p++)
+      pips += `<span class="pip${p <= v ? ' on' : ''}${p <= v && v <= 2 ? ' low' : ''}"></span>`;
+    return `<span class="meter" title="${esc(MAN.quality_help[k])} This one scored ${v} of 4.">` +
+      `<span class="meter-k">${k}</span><span class="pips">${pips}</span></span>`;
+  }).join('') + `</div>`;
+}
+
+function renderDetail(C) {
+  const hit = S.hits[S.sel];
+  if (!hit) {
+    $('detail').innerHTML = '<p class="blank">Nothing matches both of those filters. ' +
+      'Clear one to widen the results again.</p>';
+    return;
+  }
+  const idx = hit[1], m = C.meta[idx];
+  const isQ = S.mode === 'questions';
+
+  const occNames = m.soc.map(c => MAN.soc_detail[c] || c);
+  const parts = [];
+  parts.push(`<div class="d-kicker">${isQ ? 'Question' : 'Answer'} · ${esc(m.d)} · ${esc(m.w || 'date unknown')}</div>`);
+  if (!isQ && m.qt) parts.push(`<div class="m-k" style="margin-bottom:8px">In reply to</div>
+    <div class="d-voice" style="font-size:1.02rem;margin-bottom:20px">${esc(oneline(m.qt))}</div>
+    <div class="m-k" style="margin-bottom:8px">The answer</div>`);
+  if (isQ && m.ti) {
+    // the stored text is title + newline + body; split them so the title reads as a title
+    const body = m.t.slice(m.ti.length).trim();
+    parts.push(`<h2 class="d-title">${esc(m.ti)}</h2>`);
+    if (body) parts.push(`<div class="d-voice">${esc(body)}</div>`);
+  } else {
+    parts.push(`<div class="d-voice${isQ ? '' : ' ans'}">${esc(m.t)}</div>`);
+  }
+
+  const meta = [];
+  meta.push(`<div class="m-item"><div class="m-k">Occupation</div><div class="m-v">${
+    occNames.length ? tags(occNames, '') : (m.fl.length ? tags(m.fl, 'f') : '<span class="tag f">Unlabelled</span>')
+  }</div></div>`);
+  if (m.g.length) meta.push(`<div class="m-item"><div class="m-k">Goal behind it</div><div class="m-v">${
+    m.g.map(g => `<span class="tag g" title="${esc(MAN.goal_help[g] || '')}">${esc(MAN.goal_labels[g] || g)}</span>`).join('')
+  }</div></div>`);
+  if (m.sc.length) meta.push(`<div class="m-item"><div class="m-k">Situation</div><div class="m-v">${tags(m.sc, 'f')}</div></div>`);
+  if (m.rl && m.rl.length) meta.push(`<div class="m-item"><div class="m-k">How it reasons</div><div class="m-v">${tags(m.rl, 'r')}</div></div>`);
+  if (m.ql) meta.push(`<div class="m-item"><div class="m-k">Rated by a human</div><div class="m-v">${meters(m.ql)}</div></div>`);
+  parts.push(`<div class="d-meta">${meta.join('')}</div>`);
+
+  parts.push(`<div class="acts">
+      <button class="act" data-sim="${idx}">Find more like this</button>
+      ${!isQ && m.qi != null ? `<button class="act" data-goq="${m.qi}">See the question and its other answers</button>` : ''}
+    </div>`);
+
+  if (isQ && m.ai && m.ai.length) {
+    const A = STORE.answers;
+    if (!A.meta) {
+      parts.push(`<div class="replies"><h3>${m.ai.length} answer${m.ai.length === 1 ? '' : 's'}</h3>
+        <p class="blank">Fetching the answer text…</p></div>`);
+    } else {
+      parts.push(`<div class="replies"><h3>${m.ai.length} answer${m.ai.length === 1 ? '' : 's'}</h3>` +
+        m.ai.map(ai => {
+          const a = A.meta[ai];
+          return `<div class="reply">
+            <div class="reply-t clip">${esc(a.t)}</div>
+            <div class="reply-f">
+              <button class="xp" data-expand aria-expanded="false">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+                <span data-xp-label>Read all of it</span>
+              </button>
+              ${a.rl && a.rl.length ? `<span class="m-v">${tags(a.rl, 'r')}</span>` : ''}
+              ${a.ql ? meters(a.ql) : ''}
+            </div></div>`;
+        }).join('') + `</div>`);
+    }
+  }
+
+  $('detail').innerHTML = parts.join('');
+  const d = $('detail');
+  d.querySelectorAll('[data-sim]').forEach(b => b.onclick = () => similarTo(+b.dataset.sim));
+  d.querySelectorAll('[data-goq]').forEach(b => b.onclick = () => openQuestion(+b.dataset.goq));
+  d.querySelectorAll('[data-expand]').forEach(b => {
+    const body = b.closest('.reply').querySelector('.reply-t');
+    b.onclick = () => {
+      const clipped = body.classList.toggle('clip');
+      b.setAttribute('aria-expanded', String(!clipped));
+      b.querySelector('[data-xp-label]').textContent = clipped ? 'Read all of it' : 'Show less';
+    };
+  });
+  gaugeExpanders(d);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => gaugeExpanders(d));
+}
+
+/* An answer shorter than the clamp isn't hidden, so it gets no control and no fade. */
+function gaugeExpanders(d) {
+  d.querySelectorAll('[data-expand]').forEach(b => {
+    const body = b.closest('.reply').querySelector('.reply-t');
+    if (!body.classList.contains('clip')) return;          // already open — leave it alone
+    if (body.scrollHeight <= body.clientHeight + 1) { body.classList.remove('clip'); b.hidden = true; }
+  });
+}
+
+/* jump from an answer to its question, putting that question at the top of the list */
+async function openQuestion(qIdx) {
+  setMode('questions');
+  const C = await ready('questions');
+  await loadMeta('answers');
+  // S.ranked still held answer indices; rebuild it against the questions corpus, then pin
+  // the question the reader asked for to the top.
+  const D = C.dim, row = new Float32Array(D);
+  for (let j = 0; j < D; j++) row[j] = C.vec[qIdx * D + j];
+  S.ranked = [[1, qIdx], ...rankAll(C, row).filter(h => h[1] !== qIdx)];
+  resetFilters();
+  applyFilters();
+  $('q').value = clip(oneline(C.meta[qIdx].ti || C.meta[qIdx].t), 110);
+  note('Showing that question and every answer it received.');
+  flash();
+}
+
+/* ── market ───────────────────────────────────────────────────────────────── */
+function renderMarket(C) {
+  const agg = new Map();
+  let unlabelled = 0;
+  for (const [, i] of S.hits) {
+    const codes = C.meta[i].soc;
+    if (!codes.length) { unlabelled++; continue; }
+    for (const code of codes) {
+      const l = MAN.soc_lmi[code];
+      if (!l) continue;
+      if (!agg.has(code)) agg.set(code, { ...l, hits: 0 });
+      agg.get(code).hits++;
+    }
+  }
+  const rows = [...agg.values()].sort((a, b) => b.hits - a.hits || b.wage - a.wage).slice(0, 12);
+  const el = $('plot-lmi');
+
+  if (!rows.length) {
+    const why = !S.hits.length
+      ? 'There are no results to look up. Widen the filters above.'
+      : unlabelled === S.hits.length
+        ? `None of these ${S.hits.length} results name a specific job. Open-ended questions — ` +
+          '“what should I do with my life?” — are labelled <b>No career mentioned in question</b>, ' +
+          'which covers about half the general-domain corpus.'
+        : `These results name jobs, but none of them matched a Bureau of Labor Statistics ` +
+          `record. The two sources are joined on occupation title, and ` +
+          `${Object.keys(MAN.soc_detail).length - Object.keys(MAN.soc_lmi).length} of ` +
+          `${Object.keys(MAN.soc_detail).length} titles differ enough that they do not line up.`;
+    el.innerHTML = `<p class="blank">${why}</p>`;
+    return;
+  }
+
+  const maxWage = Math.max(...rows.map(d => d.wage));
+  const maxEmp = Math.max(...rows.map(d => d.employment));
+  el.innerHTML = `<div class="bars">` + rows.map(d => {
+    const w = Math.max(2, 100 * d.wage / maxWage);
+    const shade = 0.30 + 0.70 * Math.sqrt(d.employment / maxEmp);
+    return `<div class="bar-l">${esc(d.title)}<div class="bar-n">${d.hits} of ${S.hits.length} results</div></div>
+      <div class="bar-t"><div class="bar-f" style="width:${w}%;opacity:${shade.toFixed(2)}"
+        title="${esc(d.title)} — mean wage $${Math.round(d.wage).toLocaleString()}, ${Math.round(d.employment).toLocaleString()} people nationally"></div></div>
+      <div class="bar-v">$${Math.round(d.wage).toLocaleString()}</div>`;
+  }).join('') + `</div>
+    <p class="bars-key">Bar length is the mean annual wage. Stronger colour means more people
+      do the job nationally — from ${Math.round(Math.min(...rows.map(d => d.employment))).toLocaleString()}
+      to ${Math.round(maxEmp).toLocaleString()} workers.</p>`;
+}
+
+/* ── mode ─────────────────────────────────────────────────────────────────── */
+function setMode(m) {
+  S.mode = m;
+  $('sc-q').setAttribute('aria-pressed', String(m === 'questions'));
+  $('sc-a').setAttribute('aria-pressed', String(m === 'answers'));
+}
+
+$('s-clear').onclick = () => { resetFilters(); applyFilters(); flash(); };
+// nothing else may reference the removed widen control
+$('sc-q').onclick = () => { if (S.mode !== 'questions') { setMode('questions'); if (S.ranked.length) search(); } };
+$('sc-a').onclick = () => { if (S.mode !== 'answers') { setMode('answers'); if (S.ranked.length) search(); } };
+$('go').onclick = () => search();
+$('q').addEventListener('keydown', e => { if (e.key === 'Enter') search(); });
+
+boot().catch(err => { note('Could not start: ' + err.message, true); console.error(err); });
+</script>
+</body>
+</html>
